@@ -5,66 +5,295 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AF Meter — Analytics</title>
   <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      text-align: center;
+      padding: 16px;
+    }
+    .stat-label {
+      font-size: 0.85em;
+      opacity: 0.7;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      font-size: 2em;
+      font-weight: bold;
+      color: #64ffda;
+      margin-bottom: 4px;
+    }
+    .stat-unit {
+      font-size: 0.9em;
+      opacity: 0.6;
+    }
+    #refresh-icon {
+      display: inline-block;
+      transition: transform 0.3s;
+    }
+    #refresh-icon.spinning {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+    #data-table tbody tr:hover {
+      background: rgba(255,255,255,0.05);
+    }
+    .control-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .control-group {
+      flex: 1;
+      min-width: 200px;
+    }
+    .control-group label {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
+    .control-group select,
+    .control-group input {
+      width: 100%;
+      padding: 8px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 4px;
+      color: inherit;
+    }
+    .custom-range-panel {
+      display: none;
+      margin-bottom: 16px;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 4px;
+    }
+    .date-inputs {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .date-inputs > div {
+      flex: 1;
+      min-width: 150px;
+    }
+    .action-buttons {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .loading-state,
+    .empty-state {
+      display: none;
+      text-align: center;
+      padding: 40px;
+    }
+    .loading-state .icon {
+      font-size: 2em;
+      margin-bottom: 8px;
+    }
+    .empty-state .icon {
+      font-size: 3em;
+      margin-bottom: 12px;
+      opacity: 0.5;
+    }
+    .data-table-container {
+      overflow-x: auto;
+    }
+    #data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.9em;
+    }
+    #data-table thead tr {
+      border-bottom: 2px solid rgba(255,255,255,0.2);
+    }
+    #data-table th,
+    #data-table td {
+      padding: 8px;
+    }
+    #data-table th {
+      text-align: left;
+    }
+    #data-table td:not(:first-child) {
+      text-align: right;
+    }
+    details summary {
+      cursor: pointer;
+      padding: 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 4px;
+      user-select: none;
+    }
+    details summary:hover {
+      background: rgba(255,255,255,0.08);
+    }
+  </style>
 </head>
 <body>
   <div class="app-container">
-  <header class="gradient-card glow-primary">
-    <h1>AF Meter</h1>
-    <nav class="links">
-      <a href="connect.html"><button>Connect</button></a>
-      <a href="index.html"><button class="ghost">Home</button></a>
-    </nav>
-  </header>
-  <main>
-    <section class="page">
-      <h2>Analytics</h2>
-      <div class="card animate-pulse-glow">
-        <p class="status">Displays energy readings collected from the meter. Use the Connect page to fetch or simulate data.</p>
-        <div style="margin-bottom:8px">
-          <button id="btn-refresh">Load data</button>
-          <button id="btn-clear" class="ghost">Clear stored data</button>
-          <button id="btn-download" class="ghost">Download CSV</button>
+    <header class="gradient-card glow-primary">
+      <h1>AF Meter</h1>
+      <nav class="links">
+        <a href="connect.html"><button>Connect</button></a>
+        <a href="index.html"><button class="ghost">Home</button></a>
+      </nav>
+    </header>
+    <main>
+      <section class="page">
+        <h2>Analytics Dashboard</h2>
+        
+        <!-- Stats Overview Cards -->
+        <div class="stats-grid">
+          <div class="card stat-card">
+            <div class="stat-label">Total Energy</div>
+            <div class="stat-value" id="stat-total">--</div>
+            <div class="stat-unit">kWh</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Average Power</div>
+            <div class="stat-value" id="stat-avg">--</div>
+            <div class="stat-unit">kW</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Peak Power</div>
+            <div class="stat-value" id="stat-peak">--</div>
+            <div class="stat-unit">kW</div>
+          </div>
+          <div class="card stat-card">
+            <div class="stat-label">Readings</div>
+            <div class="stat-value" id="stat-count">--</div>
+            <div class="stat-unit">samples</div>
+          </div>
         </div>
-        <canvas id="chart"></canvas>
-        <div style="margin-top:12px" id="summary" class="status"></div>
-      </div>
-    </section>
-  </main>
-  <footer>Prototype — demo only.</footer>
+
+        <!-- Chart Controls -->
+        <div class="card animate-pulse-glow">
+          <div class="control-row">
+            <div class="control-group">
+              <label for="time-range">Time Range:</label>
+              <select id="time-range">
+                <option value="all">All Data</option>
+                <option value="24h">Last 24 Hours</option>
+                <option value="7d">Last 7 Days</option>
+                <option value="30d">Last 30 Days</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </div>
+            
+            <div class="control-group">
+              <label for="chart-type">Chart Type:</label>
+              <select id="chart-type">
+                <option value="line">Line Chart</option>
+                <option value="bar">Bar Chart</option>
+                <option value="area">Area Chart</option>
+              </select>
+            </div>
+
+            <div class="control-group" style="display: flex; align-items: flex-end;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer; margin-bottom: 0;">
+                <input type="checkbox" id="auto-refresh" style="cursor: pointer;">
+                <span style="font-size: 0.9em;">Auto-refresh (30s)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Custom Date Range -->
+          <div id="custom-range" class="custom-range-panel">
+            <div class="date-inputs">
+              <div>
+                <label>From:</label>
+                <input type="datetime-local" id="date-from">
+              </div>
+              <div>
+                <label>To:</label>
+                <input type="datetime-local" id="date-to">
+              </div>
+              <div style="display: flex; align-items: flex-end;">
+                <button id="btn-apply-range">Apply</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="action-buttons">
+            <button id="btn-refresh">
+              <span id="refresh-icon">🔄</span> Load Data
+            </button>
+            <button id="btn-clear" class="ghost">Clear Data</button>
+            <button id="btn-download" class="ghost">📥 Download CSV</button>
+            <button id="btn-download-json" class="ghost">📄 Download JSON</button>
+            <button id="btn-compare" class="ghost">📊 Compare Periods</button>
+          </div>
+
+          <!-- Loading State -->
+          <div id="loading-state" class="loading-state">
+            <div class="icon">⏳</div>
+            <p>Loading data...</p>
+          </div>
+
+          <!-- Empty State -->
+          <div id="empty-state" class="empty-state">
+            <div class="icon">📊</div>
+            <p class="status">No data available. Visit the <a href="connect.html" style="color: #64ffda; text-decoration: underline;">Connect page</a> to fetch or simulate data.</p>
+          </div>
+
+          <!-- Chart Container -->
+          <div id="chart-container" style="position: relative;">
+            <canvas id="chart"></canvas>
+          </div>
+
+          <!-- Summary Stats -->
+          <div style="margin-top: 16px;" id="summary" class="status"></div>
+        </div>
+
+        <!-- Data Table -->
+        <details style="margin-top: 20px;">
+          <summary>
+            <strong>📋 View Raw Data Table</strong>
+          </summary>
+          <div class="card data-table-container" style="margin-top: 12px;">
+            <table id="data-table">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Energy (kWh)</th>
+                  <th>Power (kW)</th>
+                  <th>Voltage (V)</th>
+                  <th>Current (A)</th>
+                </tr>
+              </thead>
+              <tbody id="table-body">
+                <tr>
+                  <td colspan="5" style="padding: 20px; text-align: center; opacity: 0.6;">No data loaded</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+      </section>
+    </main>
+    <footer>Prototype — demo only.</footer>
   </div>
   <script src="assets/main.js"></script>
   <script>
-    const chart = document.getElementById('chart')
-    async function render(){
-      const el = document.getElementById('summary')
-      try{
-        const res = await fetch('/api/readings')
-        if(res.ok){
-          const data = await res.json()
-          // mirror into local store for offline use
-          AF.DataStore.clear(); AF.DataStore.store(data)
-          AF.drawLineChart(chart, data)
-          const vals = data.map(d=>d.value)
-          if(vals.length===0){ el.textContent = 'No readings available.'; return }
-          const sum = vals.reduce((a,b)=>a+b,0)
-          el.textContent = `Points: ${vals.length} — min: ${Math.min(...vals)} — avg: ${Math.round(sum/vals.length)} — max: ${Math.max(...vals)}`
-          return
-        }
-      }catch(e){ console.warn('Backend not available, falling back to local data', e) }
-      // fallback to local
-      const data = AF.DataStore.load()
-      AF.drawLineChart(chart, data)
-      const vals = data.map(d=>d.value)
-      if(vals.length===0){ el.textContent = 'No readings available.'; return }
-      const sum = vals.reduce((a,b)=>a+b,0)
-      el.textContent = `Points: ${vals.length} — min: ${Math.min(...vals)} — avg: ${Math.round(sum/vals.length)} — max: ${Math.max(...vals)}`
-    }
-    document.getElementById('btn-refresh').addEventListener('click', render)
-    document.getElementById('btn-clear').addEventListener('click', async ()=>{ if(confirm('Clear stored readings?')){ try{ await fetch('/api/readings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify([])}) }catch(e){} AF.DataStore.clear(); render() } })
-    document.getElementById('btn-download').addEventListener('click', ()=>{ AF.downloadCSV(AF.DataStore.load()) })
-    window.addEventListener('resize', ()=>AF.drawLineChart(chart, AF.DataStore.load()))
-    // initial render
-    render()
+    const chart = document.getElementById('chart');
+    
+    // Show/hide custom date range
+    document.getElementById('time-range').addEventListener('change', (e) => {
+      document.getElementById('custom-range').style.display = 
+        e.target.value === 'custom' ? 'block' : 'none';
+    });
   </script>
 </body>
 </html>

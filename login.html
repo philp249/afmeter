@@ -5,43 +5,553 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>AF Meter — Login</title>
   <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    .login-container {
+      max-width: 450px;
+      margin: 40px auto;
+    }
+    .login-header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .login-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 0 20px rgba(100, 255, 218, 0.5));
+      animation: float 3s ease-in-out infinite;
+    }
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    .login-title {
+      font-size: 2em;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #64ffda 0%, #00bcd4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .login-subtitle {
+      font-size: 1em;
+      opacity: 0.7;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.9em;
+      font-weight: 500;
+      opacity: 0.9;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      color: inherit;
+      font-size: 1em;
+      transition: all 0.3s;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: #64ffda;
+      box-shadow: 0 0 0 4px rgba(100, 255, 218, 0.2);
+      background: rgba(255, 255, 255, 0.08);
+    }
+    .form-group input::placeholder {
+      opacity: 0.5;
+    }
+    .password-wrapper {
+      position: relative;
+    }
+    .password-toggle {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: inherit;
+      cursor: pointer;
+      opacity: 0.6;
+      font-size: 1.2em;
+      padding: 4px;
+      transition: opacity 0.2s;
+    }
+    .password-toggle:hover {
+      opacity: 1;
+    }
+    .form-options {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 0.9em;
+    }
+    .remember-me {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+    .remember-me input[type="checkbox"] {
+      cursor: pointer;
+      width: 18px;
+      height: 18px;
+    }
+    .forgot-link {
+      color: #64ffda;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .forgot-link:hover {
+      opacity: 0.8;
+      text-decoration: underline;
+    }
+    .button-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .button-group button {
+      width: 100%;
+      padding: 14px;
+      font-size: 1em;
+    }
+    .divider {
+      display: flex;
+      align-items: center;
+      text-align: center;
+      margin: 24px 0;
+      opacity: 0.5;
+    }
+    .divider::before,
+    .divider::after {
+      content: '';
+      flex: 1;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .divider span {
+      padding: 0 16px;
+      font-size: 0.85em;
+    }
+    .social-buttons {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .social-button {
+      padding: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 6px;
+      color: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 0.9em;
+    }
+    .social-button:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: #64ffda;
+    }
+    .signup-prompt {
+      text-align: center;
+      padding: 20px;
+      background: rgba(100, 255, 218, 0.05);
+      border-radius: 8px;
+      font-size: 0.95em;
+    }
+    .signup-link {
+      color: #64ffda;
+      font-weight: bold;
+      text-decoration: none;
+      cursor: pointer;
+    }
+    .signup-link:hover {
+      text-decoration: underline;
+    }
+    .info-banner {
+      background: rgba(100, 255, 218, 0.1);
+      border-left: 3px solid #64ffda;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-size: 0.85em;
+    }
+    .error-message {
+      background: rgba(255, 82, 82, 0.1);
+      border-left: 3px solid #ff5252;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      color: #ff5252;
+      display: none;
+    }
+    .success-message {
+      background: rgba(100, 255, 218, 0.1);
+      border-left: 3px solid #64ffda;
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin-bottom: 16px;
+      color: #64ffda;
+      display: none;
+    }
+    .loading-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .loading-spinner {
+      text-align: center;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(100, 255, 218, 0.2);
+      border-top-color: #64ffda;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin: 0 auto 16px;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-  <header>
-    <h1>AF Meter</h1>
-    <nav class="links">
-      <a href="analytics.html"><button>Analytics</button></a>
-      <a href="connect.html"><button class="ghost">Connect</button></a>
-    </nav>
-  </header>
-  <main>
-    <section class="page">
-      <h2>Sign in</h2>
-      <div class="card">
-        <form id="login-form">
-          <label>Email</label>
-          <input id="email" type="email" placeholder="you@example.com" required />
-          <label>Password</label>
-          <input id="password" type="password" placeholder="••••••" required />
-          <div class="flex">
-            <button type="submit">Sign in</button>
-            <button type="button" class="ghost" id="guest">Use demo</button>
-          </div>
-        </form>
-        <p class="status">This prototype stores a simple session in localStorage only.</p>
+  <div class="app-container">
+    <header class="gradient-card glow-primary">
+      <div style="display:flex;align-items:center;gap:12px">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 8px hsl(174 72% 50% / 0.6))">
+          <path d="M13 2L3 14H11L11 22L21 10H13L13 2Z" fill="hsl(174 72% 50%)" stroke="hsl(174 72% 60%)" stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <h1>AF Meter</h1>
       </div>
-    </section>
-  </main>
-  <footer>Prototype — demo only.</footer>
+      <nav class="links">
+        <a href="index.html"><button>Home</button></a>
+        <a href="analytics.html"><button class="ghost">Analytics</button></a>
+      </nav>
+    </header>
+    <main>
+      <section class="page">
+        <div class="login-container">
+          <div class="login-header">
+            <div class="login-icon">🔐</div>
+            <h2 class="login-title">Welcome Back</h2>
+            <p class="login-subtitle">Sign in to access your energy dashboard</p>
+          </div>
+
+          <div class="card animate-pulse-glow">
+            <div id="error-message" class="error-message"></div>
+            <div id="success-message" class="success-message"></div>
+
+            <form id="login-form">
+              <div class="form-group">
+                <label for="email">Email Address</label>
+                <input 
+                  id="email" 
+                  type="email" 
+                  placeholder="you@example.com" 
+                  required 
+                  autocomplete="email"
+                  autofocus
+                />
+              </div>
+
+              <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrapper">
+                  <input 
+                    id="password" 
+                    type="password" 
+                    placeholder="Enter your password" 
+                    required 
+                    autocomplete="current-password"
+                  />
+                  <button type="button" class="password-toggle" id="toggle-password">
+                    👁️
+                  </button>
+                </div>
+              </div>
+
+              <div class="form-options">
+                <label class="remember-me">
+                  <input type="checkbox" id="remember-me" />
+                  <span>Remember me</span>
+                </label>
+                <a href="#" class="forgot-link" id="forgot-password">Forgot password?</a>
+              </div>
+
+              <div class="button-group">
+                <button type="submit">
+                  🔐 Sign In
+                </button>
+                <button type="button" class="ghost" id="guest">
+                  🎮 Try Demo Mode
+                </button>
+              </div>
+            </form>
+
+            <div class="divider">
+              <span>OR CONTINUE WITH</span>
+            </div>
+
+            <div class="social-buttons">
+              <button class="social-button" id="google-login">
+                <span>🔵</span>
+                <span>Google</span>
+              </button>
+              <button class="social-button" id="github-login">
+                <span>⚫</span>
+                <span>GitHub</span>
+              </button>
+            </div>
+
+            <div class="signup-prompt">
+              Don't have an account? 
+              <a class="signup-link" id="signup-link">Create one now</a>
+            </div>
+
+            <div class="info-banner">
+              💡 <strong>Demo Mode:</strong> Test all features without an account. Your data will be stored locally in your browser.
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+    <footer>Prototype — demo only.</footer>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loading-overlay">
+    <div class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Signing you in...</p>
+    </div>
+  </div>
+
   <script src="assets/main.js"></script>
   <script>
-    document.getElementById('login-form').addEventListener('submit', function(e){
+    // Toggle password visibility
+    document.getElementById('toggle-password').addEventListener('click', function() {
+      const passwordInput = document.getElementById('password');
+      const type = passwordInput.type === 'password' ? 'text' : 'password';
+      passwordInput.type = type;
+      this.textContent = type === 'password' ? '👁️' : '🙈';
+    });
+
+    // Show error message
+    function showError(message) {
+      const errorDiv = document.getElementById('error-message');
+      errorDiv.textContent = '❌ ' + message;
+      errorDiv.style.display = 'block';
+      setTimeout(() => {
+        errorDiv.style.display = 'none';
+      }, 5000);
+    }
+
+    // Show success message
+    function showSuccess(message) {
+      const successDiv = document.getElementById('success-message');
+      successDiv.textContent = '✅ ' + message;
+      successDiv.style.display = 'block';
+      setTimeout(() => {
+        successDiv.style.display = 'none';
+      }, 3000);
+    }
+
+    // Show loading overlay
+    function showLoading(show = true) {
+      document.getElementById('loading-overlay').style.display = show ? 'flex' : 'none';
+    }
+
+    // Form submission
+    document.getElementById('login-form').addEventListener('submit', async function(e) {
       e.preventDefault();
-      const user = {email:document.getElementById('email').value, ts:Date.now()}
-      AF.Session.set(user)
-      window.location.href = 'analytics.html'
-    })
-    document.getElementById('guest').addEventListener('click', ()=>{ AF.Session.set({email:'demo@local',ts:Date.now()}); window.location.href='analytics.html' })
+      
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value;
+      const rememberMe = document.getElementById('remember-me').checked;
+
+      // Validation
+      if (!email || !password) {
+        showError('Please enter both email and password');
+        return;
+      }
+
+      if (password.length < 6) {
+        showError('Password must be at least 6 characters');
+        return;
+      }
+
+      // Simulate authentication
+      showLoading(true);
+
+      setTimeout(() => {
+        showLoading(false);
+
+        // Store session
+        if (window.AF && AF.Session) {
+          AF.Session.set({ 
+            email, 
+            ts: Date.now(),
+            rememberMe
+          });
+          
+          if (rememberMe) {
+            localStorage.setItem('af_remember', 'true');
+          }
+
+          showSuccess(`Welcome back, ${email}!`);
+          
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1000);
+        } else {
+          showError('Session manager not available');
+        }
+      }, 1500);
+    });
+
+    // Guest/Demo mode
+    document.getElementById('guest').addEventListener('click', function() {
+      if (window.AF && AF.Session) {
+        showLoading(true);
+        
+        setTimeout(() => {
+          showLoading(false);
+          
+          AF.Session.set({ 
+            email: 'demo@afmeter.local', 
+            ts: Date.now(),
+            demo: true
+          });
+          
+          showSuccess('Entering demo mode...');
+          
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1000);
+        }, 800);
+      }
+    });
+
+    // Social logins (simulated)
+    document.getElementById('google-login').addEventListener('click', function() {
+      showLoading(true);
+      
+      setTimeout(() => {
+        showLoading(false);
+        
+        if (window.AF && AF.Session) {
+          const email = 'user@gmail.com';
+          AF.Session.set({ 
+            email, 
+            ts: Date.now(),
+            provider: 'google'
+          });
+          
+          showSuccess(`Signed in with Google as ${email}`);
+          
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1000);
+        }
+      }, 1200);
+    });
+
+    document.getElementById('github-login').addEventListener('click', function() {
+      showLoading(true);
+      
+      setTimeout(() => {
+        showLoading(false);
+        
+        if (window.AF && AF.Session) {
+          const email = 'user@github.com';
+          AF.Session.set({ 
+            email, 
+            ts: Date.now(),
+            provider: 'github'
+          });
+          
+          showSuccess(`Signed in with GitHub as ${email}`);
+          
+          setTimeout(() => {
+            window.location.href = 'index.html';
+          }, 1000);
+        }
+      }, 1200);
+    });
+
+    // Forgot password
+    document.getElementById('forgot-password').addEventListener('click', function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      
+      if (email) {
+        showSuccess(`Password reset link sent to ${email}`);
+      } else {
+        showError('Please enter your email address first');
+      }
+    });
+
+    // Sign up link
+    document.getElementById('signup-link').addEventListener('click', function(e) {
+      e.preventDefault();
+      const email = document.getElementById('email').value.trim();
+      
+      if (email) {
+        showLoading(true);
+        
+        setTimeout(() => {
+          showLoading(false);
+          
+          if (window.AF && AF.Session) {
+            AF.Session.set({ 
+              email, 
+              ts: Date.now(),
+              newUser: true
+            });
+            
+            showSuccess(`Account created for ${email}!`);
+            
+            setTimeout(() => {
+              window.location.href = 'index.html';
+            }, 1000);
+          }
+        }, 1000);
+      } else {
+        showError('Please enter an email address to sign up');
+      }
+    });
+
+    // Auto-fill remembered user
+    window.addEventListener('load', function() {
+      if (localStorage.getItem('af_remember') === 'true') {
+        const session = window.AF && AF.Session ? AF.Session.get() : null;
+        if (session && session.email) {
+          document.getElementById('email').value = session.email;
+          document.getElementById('remember-me').checked = true;
+        }
+      }
+    });
   </script>
 </body>
 </html>

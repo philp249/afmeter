@@ -1,120 +1,779 @@
-Push-Location 'C:\Users\1unipod\afmeter'
-python -m http.server 8000
-ii http://localhost:8000/index.html
-Pop-Location<!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
-	<meta charset="utf-8" />
-	<meta name="viewport" content="width=device-width,initial-scale=1" />
-	<title>AF Meter — Home</title>
-	<link rel="stylesheet" href="assets/styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AF Meter — Connect</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    .connection-grid {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .connection-card {
+      position: relative;
+    }
+    .connection-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 500;
+    }
+    .status-connected {
+      background: rgba(100, 255, 218, 0.2);
+      color: #64ffda;
+    }
+    .status-disconnected {
+      background: rgba(255, 255, 255, 0.1);
+      color: rgba(255, 255, 255, 0.6);
+    }
+    .status-connecting {
+      background: rgba(255, 179, 0, 0.2);
+      color: #ffb300;
+    }
+    .status-error {
+      background: rgba(255, 82, 82, 0.2);
+      color: #ff5252;
+    }
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .indicator-connected {
+      background: #64ffda;
+      box-shadow: 0 0 8px #64ffda;
+      animation: pulse 2s infinite;
+    }
+    .indicator-disconnected {
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .indicator-connecting {
+      background: #ffb300;
+      animation: blink 1s infinite;
+    }
+    .indicator-error {
+      background: #ff5252;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    .input-group {
+      margin-bottom: 12px;
+    }
+    .input-group label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 0.9em;
+      opacity: 0.8;
+    }
+    .input-group input,
+    .input-group select {
+      width: 100%;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+      color: inherit;
+      font-size: 1em;
+    }
+    .input-group input:focus,
+    .input-group select:focus {
+      outline: none;
+      border-color: #64ffda;
+      box-shadow: 0 0 0 2px rgba(100, 255, 218, 0.2);
+    }
+    .button-group {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .button-group button {
+      flex: 1;
+      min-width: 120px;
+    }
+    .info-banner {
+      background: rgba(100, 255, 218, 0.1);
+      border-left: 3px solid #64ffda;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 0.9em;
+    }
+    .warning-banner {
+      background: rgba(255, 179, 0, 0.1);
+      border-left: 3px solid #ffb300;
+      padding: 12px;
+      border-radius: 4px;
+      margin-bottom: 16px;
+      font-size: 0.9em;
+    }
+    .device-list {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    .device-item {
+      padding: 8px;
+      margin-bottom: 6px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .device-item:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .device-item:last-child {
+      margin-bottom: 0;
+    }
+    .advanced-options {
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+    .connection-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+      padding: 12px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+    .stat-item {
+      text-align: center;
+    }
+    .stat-item .label {
+      font-size: 0.8em;
+      opacity: 0.6;
+      margin-bottom: 4px;
+    }
+    .stat-item .value {
+      font-size: 1.2em;
+      font-weight: bold;
+      color: #64ffda;
+    }
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top-color: #64ffda;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      100% { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 <body>
-	<script src="assets/main.js"></script>
-	<div class="app-container">
-	<header class="gradient-card glow-primary">
-		<div style="display:flex;align-items:center;gap:12px">
-			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 8px hsl(174 72% 50% / 0.6))">
-				<path d="M13 2L3 14H11L11 22L21 10H13L13 2Z" fill="hsl(174 72% 50%)" stroke="hsl(174 72% 60%)" stroke-width="1.5" stroke-linejoin="round"/>
-			</svg>
-			<h1>AF Meter</h1>
-		</div>
-		<nav class="links">
-			<div id="header-links"></div>
-		</nav>
-	</header>
-	<main>
-		<section class="page">
-			<div class="card animate-pulse-glow">
-				<h2>AF Meter Prototype</h2>
-				<p class="status">This repo now serves separate pages for Connect (`connect.html`) and Analytics (`analytics.html`).</p>
-				<p class="status">Notes: Web Bluetooth requires HTTPS or localhost. Wi‑Fi actions are simulated in this prototype.</p>
-				<hr />
-				<div id="landing-auth" style="margin-top:12px"></div>
-			</div>
-		</section>
-	</main>
-	<footer>Prototype — demo only.</footer>
-	</div>
-	<script src="assets/main.js"></script>
-	<script>
-		// Render landing auth area: if user signed-in show account + logout,
-		// otherwise show inline login form that uses AF.Session helpers.
-		const mount = document.getElementById('landing-auth')
-		function renderHeaderLinks(){
-			const container = document.getElementById('header-links')
-			if(!container) return
-			const user = AF && AF.Session ? AF.Session.get() : null
-			container.innerHTML = ''
-			if(user){
-				const a1 = document.createElement('a')
-				a1.href = 'connect.html'
-				a1.innerHTML = '<button>Connect</button>'
-				const a2 = document.createElement('a')
-				a2.href = 'analytics.html'
-				a2.innerHTML = '<button class="ghost">Analytics</button>'
-				container.appendChild(a1)
-				container.appendChild(a2)
-			}else{
-				// when not signed in, keep header minimal (no links)
-				container.innerHTML = ''
-			}
-		}
-		function renderAuth(){
-			const user = AF && AF.Session ? AF.Session.get() : null
-			mount.innerHTML = ''
-			if(user){
-				const box = document.createElement('div')
-				box.className = 'card'
-				box.innerHTML = `<p class="status">Signed in as <strong>${String(user.email)}</strong></p>`
-				const btns = document.createElement('div')
-				btns.className = 'flex'
-				const goto = document.createElement('button')
-				goto.textContent = 'Open Analytics'
-				goto.addEventListener('click', ()=> window.location.href = 'analytics.html')
-				const logout = document.createElement('button')
-				logout.className = 'ghost'
-				logout.textContent = 'Sign out'
-				logout.addEventListener('click', ()=>{
-					AF.Session.clear()
-					renderAuth()
-				})
-				btns.appendChild(goto); btns.appendChild(logout)
-				box.appendChild(btns)
-				mount.appendChild(box)
-			}else{
-				const box = document.createElement('div')
-				box.className = 'card'
-				box.innerHTML = `
-					<form id="landing-login">
-						<label>Email</label>
-						<input id="landing-email" type="email" placeholder="you@example.com" required />
-						<label>Password</label>
-						<input id="landing-password" type="password" placeholder="••••••" required />
-						<div class="flex">
-							<button type="submit">Sign in</button>
-							<button type="button" class="ghost" id="landing-guest">Use demo</button>
-						</div>
-					</form>
-				`
-				mount.appendChild(box)
-				const form = document.getElementById('landing-login')
-				form.addEventListener('submit', (e)=>{
-					e.preventDefault()
-					const email = document.getElementById('landing-email').value
-					AF.Session.set({email, ts: Date.now()})
-					renderAuth()
-					window.location.href = 'analytics.html'
-				})
-				document.getElementById('landing-guest').addEventListener('click', ()=>{
-					AF.Session.set({email:'demo@local', ts: Date.now()})
-					renderAuth()
-					window.location.href = 'analytics.html'
-				})
-			}
-		}
-		// Wait for AF to be available (assets/main.js loaded)
-		if(window.AF && AF.Session) { renderAuth(); renderHeaderLinks() } else window.addEventListener('load', ()=> setTimeout(()=>{ renderAuth(); renderHeaderLinks() },50))
-	</script>
+  <div class="app-container">
+    <header class="gradient-card glow-primary">
+      <h1>AF Meter</h1>
+      <nav class="links">
+        <a href="analytics.html"><button>Analytics</button></a>
+        <a href="index.html"><button class="ghost">Home</button></a>
+      </nav>
+    </header>
+    <main>
+      <section class="page">
+        <h2>Connect to Meter</h2>
+        
+        <div class="info-banner">
+          💡 <strong>Quick Start:</strong> Choose a connection method below to fetch data from your smart meter. Real connections require HTTPS and browser permissions.
+        </div>
+
+        <!-- Connection Methods Grid -->
+        <div class="connection-grid">
+          
+          <!-- Bluetooth Connection -->
+          <div class="card connection-card animate-pulse-glow">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="margin: 0;">🔵 Bluetooth (Web Bluetooth)</h3>
+              <span id="bt-status-badge" class="connection-status status-disconnected">
+                <span class="status-indicator indicator-disconnected"></span>
+                Disconnected
+              </span>
+            </div>
+            
+            <p class="status" style="margin-bottom: 12px;">Connect wirelessly to nearby Bluetooth-enabled smart meters.</p>
+            
+            <div class="input-group">
+              <label for="bt-filter">Device Filter (optional)</label>
+              <input id="bt-filter" type="text" placeholder="e.g., SmartMeter" />
+            </div>
+
+            <div class="button-group">
+              <button id="btn-bt">🔍 Scan & Connect</button>
+              <button id="btn-bt-disconnect" class="ghost" disabled>Disconnect</button>
+            </div>
+
+            <div id="bt-device-info" style="display: none; margin-top: 12px; padding: 12px; background: rgba(100, 255, 218, 0.1); border-radius: 4px;">
+              <div style="font-size: 0.9em; opacity: 0.8;">Connected Device:</div>
+              <div id="bt-device-name" style="font-weight: bold; color: #64ffda;"></div>
+              <div id="bt-device-id" style="font-size: 0.85em; opacity: 0.6;"></div>
+            </div>
+
+            <p id="bt-status" class="status" style="margin-top: 12px;">Ready to connect</p>
+          </div>
+
+          <!-- Wi-Fi / LAN Connection -->
+          <div class="card connection-card animate-pulse-glow">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="margin: 0;">📶 Wi‑Fi / LAN</h3>
+              <span id="wifi-status-badge" class="connection-status status-disconnected">
+                <span class="status-indicator indicator-disconnected"></span>
+                Disconnected
+              </span>
+            </div>
+            
+            <p class="status" style="margin-bottom: 12px;">Connect to smart meters on your local network or via proxy.</p>
+            
+            <div class="input-group">
+              <label for="wifi-host">Device IP or Hostname *</label>
+              <input id="wifi-host" placeholder="192.168.1.100 or meter.local" />
+            </div>
+
+            <div class="input-group">
+              <label for="device-path">API Path</label>
+              <input id="device-path" placeholder="/status or /api/values" value="/api/values" />
+            </div>
+
+            <div class="input-group">
+              <label for="wifi-port">Port</label>
+              <input id="wifi-port" type="number" placeholder="80" value="80" />
+            </div>
+
+            <details style="margin-bottom: 12px;">
+              <summary style="cursor: pointer; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 4px;">
+                <strong>⚙️ Advanced Options</strong>
+              </summary>
+              <div class="advanced-options">
+                <div class="input-group">
+                  <label for="wifi-protocol">Protocol</label>
+                  <select id="wifi-protocol">
+                    <option value="http">HTTP</option>
+                    <option value="https">HTTPS</option>
+                  </select>
+                </div>
+                <div class="input-group">
+                  <label for="wifi-timeout">Timeout (ms)</label>
+                  <input id="wifi-timeout" type="number" value="5000" />
+                </div>
+                <div class="input-group">
+                  <label>
+                    <input type="checkbox" id="wifi-auto-retry" checked />
+                    Auto-retry on failure
+                  </label>
+                </div>
+              </div>
+            </details>
+
+            <div class="button-group">
+              <button id="btn-scan">🔍 Scan Network</button>
+              <button id="btn-wifi">🔌 Connect</button>
+            </div>
+            <div class="button-group" style="margin-top: 8px;">
+              <button id="btn-proxy" class="ghost">🌐 Fetch via Proxy</button>
+              <button id="btn-wifi-disconnect" class="ghost" disabled>Disconnect</button>
+            </div>
+
+            <div id="scan-results" style="display: none;" class="device-list">
+              <div style="font-size: 0.9em; opacity: 0.8; margin-bottom: 8px;">Discovered Devices:</div>
+              <div id="scan-results-list"></div>
+            </div>
+
+            <p id="wifi-status" class="status" style="margin-top: 12px;">Ready to connect</p>
+          </div>
+
+          <!-- USB / Serial Connection -->
+          <div class="card connection-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="margin: 0;">🔌 USB / Serial (Web Serial)</h3>
+              <span id="serial-status-badge" class="connection-status status-disconnected">
+                <span class="status-indicator indicator-disconnected"></span>
+                Disconnected
+              </span>
+            </div>
+            
+            <p class="status" style="margin-bottom: 12px;">Connect via USB cable using the Web Serial API.</p>
+            
+            <div class="input-group">
+              <label for="serial-baud">Baud Rate</label>
+              <select id="serial-baud">
+                <option value="9600">9600</option>
+                <option value="19200">19200</option>
+                <option value="38400">38400</option>
+                <option value="57600">57600</option>
+                <option value="115200" selected>115200</option>
+              </select>
+            </div>
+
+            <div class="button-group">
+              <button id="btn-serial">🔍 Connect Serial</button>
+              <button id="btn-serial-disconnect" class="ghost" disabled>Disconnect</button>
+            </div>
+
+            <p id="serial-status" class="status" style="margin-top: 12px;">Ready to connect</p>
+          </div>
+
+          <!-- MQTT Connection -->
+          <div class="card connection-card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+              <h3 style="margin: 0;">📡 MQTT Broker</h3>
+              <span id="mqtt-status-badge" class="connection-status status-disconnected">
+                <span class="status-indicator indicator-disconnected"></span>
+                Disconnected
+              </span>
+            </div>
+            
+            <p class="status" style="margin-bottom: 12px;">Subscribe to meter data via MQTT broker.</p>
+            
+            <div class="input-group">
+              <label for="mqtt-broker">Broker URL</label>
+              <input id="mqtt-broker" placeholder="mqtt://broker.example.com:1883" value="ws://localhost:9001" />
+            </div>
+
+            <div class="input-group">
+              <label for="mqtt-topic">Topic</label>
+              <input id="mqtt-topic" placeholder="meter/readings" value="meter/readings" />
+            </div>
+
+            <div class="input-group">
+              <label for="mqtt-client-id">Client ID (optional)</label>
+              <input id="mqtt-client-id" placeholder="afmeter-client" />
+            </div>
+
+            <div class="button-group">
+              <button id="btn-mqtt">📡 Connect MQTT</button>
+              <button id="btn-mqtt-disconnect" class="ghost" disabled>Disconnect</button>
+            </div>
+
+            <p id="mqtt-status" class="status" style="margin-top: 12px;">Ready to connect</p>
+          </div>
+        </div>
+
+        <!-- Connection Statistics -->
+        <div class="card">
+          <h3>📊 Connection Statistics</h3>
+          <div class="connection-stats">
+            <div class="stat-item">
+              <div class="label">Active Connections</div>
+              <div class="value" id="stat-active">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="label">Total Readings</div>
+              <div class="value" id="stat-readings">0</div>
+            </div>
+            <div class="stat-item">
+              <div class="label">Last Update</div>
+              <div class="value" id="stat-last-update" style="font-size: 0.9em;">Never</div>
+            </div>
+            <div class="stat-item">
+              <div class="label">Data Rate</div>
+              <div class="value" id="stat-rate">0 /s</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Connection Logs -->
+        <details>
+          <summary style="cursor: pointer; padding: 12px; background: rgba(255,255,255,0.05); border-radius: 4px;">
+            <strong>📋 Connection Logs</strong>
+          </summary>
+          <div class="card" style="margin-top: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <span style="font-size: 0.9em; opacity: 0.8;">Recent Activity</span>
+              <button id="btn-clear-logs" class="ghost" style="padding: 4px 12px; font-size: 0.85em;">Clear</button>
+            </div>
+            <div id="connection-logs" style="max-height: 200px; overflow-y: auto; font-family: monospace; font-size: 0.85em; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 4px;">
+              <div style="opacity: 0.5;">No logs yet...</div>
+            </div>
+          </div>
+        </details>
+      </section>
+    </main>
+    <footer>Prototype — demo only.</footer>
+  </div>
+  <script src="assets/main.js"></script>
+  <script>
+    // Helper functions
+    function updateStatus(element, badgeElement, message, type = 'info') {
+      element.textContent = message;
+      const badge = badgeElement;
+      const indicator = badge.querySelector('.status-indicator');
+      
+      badge.classList.remove('status-connected', 'status-disconnected', 'status-connecting', 'status-error');
+      indicator.classList.remove('indicator-connected', 'indicator-disconnected', 'indicator-connecting', 'indicator-error');
+      
+      switch(type) {
+        case 'connected':
+          badge.classList.add('status-connected');
+          indicator.classList.add('indicator-connected');
+          badge.innerHTML = `<span class="status-indicator indicator-connected"></span> Connected`;
+          break;
+        case 'connecting':
+          badge.classList.add('status-connecting');
+          indicator.classList.add('indicator-connecting');
+          badge.innerHTML = `<span class="status-indicator indicator-connecting"></span> Connecting...`;
+          break;
+        case 'error':
+          badge.classList.add('status-error');
+          indicator.classList.add('indicator-error');
+          badge.innerHTML = `<span class="status-indicator indicator-error"></span> Error`;
+          break;
+        default:
+          badge.classList.add('status-disconnected');
+          indicator.classList.add('indicator-disconnected');
+          badge.innerHTML = `<span class="status-indicator indicator-disconnected"></span> Disconnected`;
+      }
+    }
+
+    function addLog(message, type = 'info') {
+      const logs = document.getElementById('connection-logs');
+      const timestamp = new Date().toLocaleTimeString();
+      const icons = { info: 'ℹ️', success: '✅', error: '❌', warning: '⚠️' };
+      const colors = { info: '#64ffda', success: '#64ffda', error: '#ff5252', warning: '#ffb300' };
+      
+      const logEntry = document.createElement('div');
+      logEntry.style.marginBottom = '4px';
+      logEntry.style.color = colors[type] || colors.info;
+      logEntry.innerHTML = `[${timestamp}] ${icons[type] || icons.info} ${message}`;
+      
+      if (logs.children[0]?.textContent === 'No logs yet...') {
+        logs.innerHTML = '';
+      }
+      logs.insertBefore(logEntry, logs.firstChild);
+      
+      // Keep only last 50 logs
+      while (logs.children.length > 50) {
+        logs.removeChild(logs.lastChild);
+      }
+    }
+
+    function updateStats() {
+      const activeCount = [
+        document.getElementById('bt-status-badge').classList.contains('status-connected'),
+        document.getElementById('wifi-status-badge').classList.contains('status-connected'),
+        document.getElementById('serial-status-badge').classList.contains('status-connected'),
+        document.getElementById('mqtt-status-badge').classList.contains('status-connected')
+      ].filter(Boolean).length;
+      
+      document.getElementById('stat-active').textContent = activeCount;
+    }
+
+    // Bluetooth functionality
+    const btStatus = document.getElementById('bt-status');
+    const btBadge = document.getElementById('bt-status-badge');
+    const btnBt = document.getElementById('btn-bt');
+    const btnBtDisconnect = document.getElementById('btn-bt-disconnect');
+    let btDevice = null;
+
+    btnBt.addEventListener('click', async () => {
+      if (!navigator.bluetooth) {
+        updateStatus(btStatus, btBadge, 'Web Bluetooth not supported in this browser', 'error');
+        addLog('Bluetooth API not available', 'error');
+        return;
+      }
+      
+      try {
+        updateStatus(btStatus, btBadge, 'Requesting device...', 'connecting');
+        addLog('Initiating Bluetooth scan...', 'info');
+        
+        const filter = document.getElementById('bt-filter').value.trim();
+        const options = filter ? 
+          { filters: [{ name: filter }], optionalServices: [] } :
+          { acceptAllDevices: true, optionalServices: [] };
+        
+        btDevice = await navigator.bluetooth.requestDevice(options);
+        
+        updateStatus(btStatus, btBadge, `Connected: ${btDevice.name || btDevice.id}`, 'connected');
+        addLog(`Connected to Bluetooth device: ${btDevice.name || btDevice.id}`, 'success');
+        
+        document.getElementById('bt-device-info').style.display = 'block';
+        document.getElementById('bt-device-name').textContent = btDevice.name || 'Unknown Device';
+        document.getElementById('bt-device-id').textContent = `ID: ${btDevice.id}`;
+        
+        btnBt.disabled = true;
+        btnBtDisconnect.disabled = false;
+        
+        // Simulate data fetch
+        const points = AF.simulateFetchData('bluetooth');
+        document.getElementById('stat-readings').textContent = parseInt(document.getElementById('stat-readings').textContent) + points.length;
+        document.getElementById('stat-last-update').textContent = new Date().toLocaleTimeString();
+        
+        try {
+          const r = await fetch('/api/readings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(points)
+          });
+          if (r.ok) {
+            addLog(`Posted ${points.length} readings to backend`, 'success');
+          }
+        } catch (e) {
+          addLog('Backend unavailable, stored locally', 'warning');
+        }
+        
+        updateStats();
+        alert(`Fetched ${points.length} readings via Bluetooth`);
+        
+      } catch (err) {
+        updateStatus(btStatus, btBadge, `Failed: ${err.message}`, 'error');
+        addLog(`Bluetooth connection failed: ${err.message}`, 'error');
+      }
+    });
+
+    btnBtDisconnect.addEventListener('click', () => {
+      if (btDevice) {
+        btDevice = null;
+        document.getElementById('bt-device-info').style.display = 'none';
+        updateStatus(btStatus, btBadge, 'Disconnected', 'info');
+        addLog('Bluetooth device disconnected', 'info');
+        btnBt.disabled = false;
+        btnBtDisconnect.disabled = true;
+        updateStats();
+      }
+    });
+
+    // Wi-Fi functionality
+    const wifiStatus = document.getElementById('wifi-status');
+    const wifiBadge = document.getElementById('wifi-status-badge');
+    const btnScan = document.getElementById('btn-scan');
+    const btnWifi = document.getElementById('btn-wifi');
+    const btnProxy = document.getElementById('btn-proxy');
+    const btnWifiDisconnect = document.getElementById('btn-wifi-disconnect');
+    let wifiConnected = false;
+
+    btnScan.addEventListener('click', () => {
+      updateStatus(wifiStatus, wifiBadge, 'Scanning network...', 'connecting');
+      addLog('Scanning local network...', 'info');
+      
+      setTimeout(() => {
+        const devices = [];
+        for (let i = 0; i < 3 + Math.floor(Math.random() * 3); i++) {
+          const ip = `192.168.1.${100 + Math.floor(Math.random() * 50)}`;
+          const name = `SmartMeter-${Math.floor(Math.random() * 1000)}`;
+          devices.push({ ip, name });
+        }
+        
+        const resultsDiv = document.getElementById('scan-results');
+        const listDiv = document.getElementById('scan-results-list');
+        listDiv.innerHTML = devices.map(d => 
+          `<div class="device-item" onclick="document.getElementById('wifi-host').value='${d.ip}'">
+            <strong>${d.name}</strong><br>
+            <span style="font-size: 0.85em; opacity: 0.6;">${d.ip}</span>
+          </div>`
+        ).join('');
+        
+        resultsDiv.style.display = 'block';
+        updateStatus(wifiStatus, wifiBadge, `Found ${devices.length} devices`, 'info');
+        addLog(`Network scan complete: ${devices.length} devices found`, 'success');
+      }, 1500);
+    });
+
+    btnWifi.addEventListener('click', async () => {
+      const host = document.getElementById('wifi-host').value.trim();
+      if (!host) {
+        updateStatus(wifiStatus, wifiBadge, 'Enter a host or scan first', 'error');
+        addLog('Connection failed: No host specified', 'error');
+        return;
+      }
+      
+      updateStatus(wifiStatus, wifiBadge, 'Connecting...', 'connecting');
+      addLog(`Connecting to ${host}...`, 'info');
+      
+      setTimeout(async () => {
+        wifiConnected = true;
+        updateStatus(wifiStatus, wifiBadge, `Connected to ${host}`, 'connected');
+        addLog(`Connected to Wi-Fi device: ${host}`, 'success');
+        
+        btnWifi.disabled = true;
+        btnWifiDisconnect.disabled = false;
+        
+        const points = AF.simulateFetchData('wifi');
+        document.getElementById('stat-readings').textContent = parseInt(document.getElementById('stat-readings').textContent) + points.length;
+        document.getElementById('stat-last-update').textContent = new Date().toLocaleTimeString();
+        
+        try {
+          const r = await fetch('/api/readings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(points)
+          });
+          if (r.ok) {
+            addLog(`Posted ${points.length} readings to backend`, 'success');
+          }
+        } catch (e) {
+          addLog('Backend not available; data kept in localStorage', 'warning');
+        }
+        
+        updateStats();
+        alert(`Fetched ${points.length} readings via Wi-Fi`);
+      }, 1000);
+    });
+
+    btnProxy.addEventListener('click', async () => {
+      const host = document.getElementById('wifi-host').value.trim();
+      const path = document.getElementById('device-path').value.trim() || '/';
+      
+      if (!host) {
+        updateStatus(wifiStatus, wifiBadge, 'Enter a host first', 'error');
+        addLog('Proxy failed: No host specified', 'error');
+        return;
+      }
+      
+      updateStatus(wifiStatus, wifiBadge, 'Proxying...', 'connecting');
+      addLog(`Proxying request to ${host}${path}`, 'info');
+      
+      try {
+        const res = await fetch('/api/proxy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ host, path })
+        });
+        const j = await res.json();
+        
+        if (res.ok) {
+          const preview = typeof j.body === 'string' ? 
+            j.body.substring(0, 120) : 
+            JSON.stringify(j.body).substring(0, 120);
+          updateStatus(wifiStatus, wifiBadge, `Proxy ${j.status}`, 'connected');
+          addLog(`Proxy success: ${preview}...`, 'success');
+        } else {
+          updateStatus(wifiStatus, wifiBadge, `Proxy error: ${j.error || res.status}`, 'error');
+          addLog(`Proxy error: ${j.error || res.status}`, 'error');
+        }
+      } catch (e) {
+        updateStatus(wifiStatus, wifiBadge, `Proxy failed: ${e.message}`, 'error');
+        addLog(`Proxy failed: ${e.message}`, 'error');
+      }
+    });
+
+    btnWifiDisconnect.addEventListener('click', () => {
+      if (wifiConnected) {
+        wifiConnected = false;
+        updateStatus(wifiStatus, wifiBadge, 'Disconnected', 'info');
+        addLog('Wi-Fi device disconnected', 'info');
+        btnWifi.disabled = false;
+        btnWifiDisconnect.disabled = true;
+        updateStats();
+      }
+    });
+
+    // Serial functionality
+    const serialStatus = document.getElementById('serial-status');
+    const serialBadge = document.getElementById('serial-status-badge');
+    const btnSerial = document.getElementById('btn-serial');
+    const btnSerialDisconnect = document.getElementById('btn-serial-disconnect');
+    let serialPort = null;
+
+    btnSerial.addEventListener('click', async () => {
+      if (!('serial' in navigator)) {
+        updateStatus(serialStatus, serialBadge, 'Web Serial API not supported', 'error');
+        addLog('Web Serial API not available', 'error');
+        return;
+      }
+      
+      try {
+        updateStatus(serialStatus, serialBadge, 'Requesting port...', 'connecting');
+        addLog('Requesting serial port...', 'info');
+        
+        serialPort = await navigator.serial.requestPort();
+        const baudRate = parseInt(document.getElementById('serial-baud').value);
+        await serialPort.open({ baudRate });
+        
+        updateStatus(serialStatus, serialBadge, 'Connected via USB', 'connected');
+        addLog(`Serial port opened at ${baudRate} baud`, 'success');
+        
+        btnSerial.disabled = true;
+        btnSerialDisconnect.disabled = false;
+        updateStats();
+        
+      } catch (err) {
+        updateStatus(serialStatus, serialBadge, `Failed: ${err.message}`, 'error');
+        addLog(`Serial connection failed: ${err.message}`, 'error');
+      }
+    });
+
+    btnSerialDisconnect.addEventListener('click', async () => {
+      if (serialPort) {
+        await serialPort.close();
+        serialPort = null;
+        updateStatus(serialStatus, serialBadge, 'Disconnected', 'info');
+        addLog('Serial port closed', 'info');
+        btnSerial.disabled = false;
+        btnSerialDisconnect.disabled = true;
+        updateStats();
+      }
+    });
+
+    // MQTT functionality
+    const mqttStatus = document.getElementById('mqtt-status');
+    const mqttBadge = document.getElementById('mqtt-status-badge');
+    const btnMqtt = document.getElementById('btn-mqtt');
+    const btnMqttDisconnect = document.getElementById('btn-mqtt-disconnect');
+    let mqttConnected = false;
+
+    btnMqtt.addEventListener('click', () => {
+      const broker = document.getElementById('mqtt-broker').value.trim();
+      const topic = document.getElementById('mqtt-topic').value.trim();
+      
+      if (!broker) {
+        updateStatus(mqttStatus, mqttBadge, 'Enter broker URL', 'error');
+        addLog('MQTT failed: No broker specified', 'error');
+        return;
+      }
+      
+      updateStatus(mqttStatus, mqttBadge, 'Connecting...', 'connecting');
+      addLog(`Connecting to MQTT broker: ${broker}`, 'info');
+      
+      setTimeout(() => {
+        mqttConnected = true;
+        updateStatus(mqttStatus, mqttBadge, `Subscribed to ${topic}`, 'connected');
+        addLog(`MQTT connected and subscribed to topic: ${topic}`, 'success');
+        
+        btnMqtt.disabled = true;
+        btnMqttDisconnect.disabled = false;
+        updateStats();
+      }, 1000);
+    });
+
+    btnMqttDisconnect.addEventListener('click', () => {
+      if (mqttConnected) {
+        mqttConnected = false;
+        updateStatus(mqttStatus, mqttBadge, 'Disconnected', 'info');
+        addLog('MQTT connection closed', 'info');
+        btnMqtt.disabled = false;
+        btnMqttDisconnect.disabled = true;
+        updateStats();
+      }
+    });
+
+    // Clear logs
+    document.getElementById('btn-clear-logs').addEventListener('click', () => {
+      document.getElementById('connection-logs').innerHTML = '<div style="opacity: 0.5;">No logs yet...</div>';
+    });
+
+    // Initialize
+    addLog('Connection manager initialized', 'info');
+  </script>
 </body>
 </html>
