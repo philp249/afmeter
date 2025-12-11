@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # AF Meter — Prototype
 
 This repository contains a small prototype front-end and a minimal Node/Express backend to help integrate with local smart meters.
@@ -43,3 +44,6 @@ Next steps
 - Add a backend proxy to reach LAN meters that require special protocols.
 - Replace local JSON persistence with a small DB (SQLite).
 - Add authentication (JWT/OAuth) to protect API endpoints.
+=======
+# afmeter
+>>>>>>> origin/main
