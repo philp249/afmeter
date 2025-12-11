@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AF Meter — Devices</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    .device-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .device-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 12px;
+      box-shadow: 0 8px 30px hsl(222 47% 4% / 0.5);
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .device-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px hsl(174 72% 50% / 0.3);
+    }
+    .device-card.selected {
+      border: 2px solid var(--accent);
+      background: var(--card);
+    }
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .device-name {
+      font-size: 1.1em;
+      font-weight: 600;
+      color: var(--foreground);
+    }
+    .device-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 6px;
+      font-size: 0.85em;
+      background: rgba(100, 255, 218, 0.2);
+      color: #64ffda;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #64ffda;
+      box-shadow: 0 0 8px #64ffda;
+      animation: pulse 2s infinite;
+    }
+    .device-info {
+      font-size: 0.9em;
+      color: var(--muted-foreground);
+      margin-bottom: 8px;
+    }
+    .device-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .device-actions button {
+      flex: 1;
+      padding: 8px;
+      font-size: 0.85em;
+    }
+    .no-devices {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--muted-foreground);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <header class="gradient-card glow-primary">
+    <div style="display:flex;align-items:center;gap:12px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 8px hsl(174 72% 50% / 0.6))">
+        <path d="M13 2L3 14H11L11 22L21 10H13L13 2Z" fill="hsl(174 72% 50%)" stroke="hsl(174 72% 60%)" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <h1>AF Meter</h1>
+    </div>
+    <nav class="links">
+      <a href="index.html"><button class="ghost">Home</button></a>
+      <a href="analytics.html"><button class="ghost">Analytics</button></a>
+      <a href="settings.html"><button class="ghost">Settings</button></a>
+    </nav>
+  </header>
+  <main>
+    <section class="page">
+      <h2>Connected Devices</h2>
+      <div class="card animate-pulse-glow">
+        <p class="status">View and manage all connected meters. Click a device to view its analytics.</p>
+        <div id="device-container" class="device-grid">
+          <div class="no-devices">No devices connected yet</div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>Prototype — demo only.</footer>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="assets/main.js"></script>
+  <script>
+    const socket = io();
+    const container = document.getElementById('device-container');
+    let devices = [];
+
+    socket.on('devices_update', (deviceList) => {
+      devices = deviceList;
+      renderDevices();
+    });
+
+    socket.on('connect', () => {
+      console.log('Connected to server');
+      fetch('/api/devices').then(r => r.json()).then(d => {
+        devices = d;
+        renderDevices();
+      });
+    });
+
+    function renderDevices() {
+      if (!devices || devices.length === 0) {
+        container.innerHTML = '<div class="no-devices">No devices connected yet</div>';
+        return;
+      }
+
+      container.innerHTML = devices.map(device => `
+        <div class="device-card">
+          <div class="device-header">
+            <div class="device-name">${device.name}</div>
+            <div class="device-status">
+              <span class="status-dot"></span>
+              Connected
+            </div>
+          </div>
+          <div class="device-info">
+            <div><strong>Connected:</strong> ${new Date(device.connected_at).toLocaleString()}</div>
+            ${device.last_reading ? `<div><strong>Last Reading:</strong> ${device.last_reading.value}°C @ ${new Date(device.last_reading.ts).toLocaleTimeString()}</div>` : ''}
+          </div>
+          <div class="device-actions">
+            <button onclick="viewDevice('${device.socket_id}')">View Analytics</button>
+            <button class="ghost" onclick="removeDevice('${device.socket_id}')">Remove</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function viewDevice(deviceId) {
+      // Store selected device in sessionStorage and redirect to analytics
+      sessionStorage.setItem('selected_device_id', deviceId);
+      window.location.href = 'analytics.html?device=' + deviceId;
+    }
+
+    function removeDevice(deviceId) {
+      if (confirm('Remove this device?')) {
+        // TODO: implement device removal API
+        alert('Device removal not yet implemented');
+      }
+    }
+
+    renderDevices();
+  </script>
+</body>
+</html>

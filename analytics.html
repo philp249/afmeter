@@ -145,8 +145,11 @@
     <header class="gradient-card glow-primary">
       <h1>AF Meter</h1>
       <nav class="links">
-        <a href="connect.html"><button>Connect</button></a>
         <a href="index.html"><button class="ghost">Home</button></a>
+        <a href="connect.html"><button class="ghost">Connect</button></a>
+        <a href="analytics.html"><button>Analytics</button></a>
+        <a href="multi-device.html"><button class="ghost">Devices</button></a>
+        <a href="settings.html"><button class="ghost">Settings</button></a>
       </nav>
     </header>
     <main>
@@ -285,14 +288,197 @@
     </main>
     <footer>Prototype — demo only.</footer>
   </div>
+  <script src="/socket.io/socket.io.js"></script>
   <script src="assets/main.js"></script>
   <script>
     const chart = document.getElementById('chart');
+    let autoRefreshInterval = null;
     
-    // Show/hide custom date range
+    // ===== SOCKET.IO LISTENERS =====
+    if (window.socket) {
+      socket.on('new_readings', (data) => {
+        console.log('Real-time reading received:', data);
+        updateChart();
+        updateStats();
+        AF.ToastNotification.info('📊 New reading received', 2000);
+      });
+      
+      socket.on('settings_update', (settings) => {
+        console.log('Settings updated from server:', settings);
+        AF.ToastNotification.warning(`⚙️ Thresholds updated: Warning=${settings.warning_temp}°C, Alert=${settings.alert_temp}°C`, 3000);
+      });
+    }
+    
+    // ===== STATS UPDATE =====
+    function updateStats() {
+      const data = AF.DataStore.load();
+      if (!data || data.length === 0) {
+        document.getElementById('stat-total').textContent = '--';
+        document.getElementById('stat-avg').textContent = '--';
+        document.getElementById('stat-peak').textContent = '--';
+        document.getElementById('stat-count').textContent = '--';
+        return;
+      }
+      
+      const values = data.map(d => parseFloat(d.value) || 0);
+      const total = values.reduce((a, b) => a + b, 0);
+      const avg = total / values.length;
+      const peak = Math.max(...values);
+      
+      document.getElementById('stat-total').textContent = total.toFixed(2);
+      document.getElementById('stat-avg').textContent = avg.toFixed(2);
+      document.getElementById('stat-peak').textContent = peak.toFixed(2);
+      document.getElementById('stat-count').textContent = data.length;
+      
+      document.getElementById('summary').textContent = 
+        `Total: ${total.toFixed(2)} | Average: ${avg.toFixed(2)} | Peak: ${peak.toFixed(2)} | Count: ${data.length}`;
+    }
+    
+    // ===== CHART UPDATE =====
+    function updateChart() {
+      const filterType = document.getElementById('time-range').value;
+      let data = AF.DataStore.load();
+      
+      if (filterType !== 'all' && data.length > 0) {
+        const now = Date.now();
+        const filterMs = {
+          '24h': 24 * 3600 * 1000,
+          '7d': 7 * 24 * 3600 * 1000,
+          '30d': 30 * 24 * 3600 * 1000
+        }[filterType];
+        
+        if (filterMs) {
+          data = data.filter(d => (now - d.ts) < filterMs);
+        }
+      }
+      
+      if (data.length === 0) {
+        document.getElementById('empty-state').style.display = 'block';
+        document.getElementById('chart-container').style.display = 'none';
+      } else {
+        document.getElementById('empty-state').style.display = 'none';
+        document.getElementById('chart-container').style.display = 'block';
+        AF.drawLineChart(chart, data);
+      }
+      
+      updateStats();
+    }
+    
+    // ===== TABLE UPDATE =====
+    function updateTable() {
+      const data = AF.DataStore.load();
+      const tbody = document.getElementById('table-body');
+      
+      if (!data || data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="padding: 20px; text-align: center; opacity: 0.6;">No data loaded</td></tr>';
+        return;
+      }
+      
+      tbody.innerHTML = data.slice().reverse().slice(0, 50).map(d => `
+        <tr>
+          <td>${new Date(d.ts).toLocaleString()}</td>
+          <td>${(d.value || 0).toFixed(2)}</td>
+          <td>${(d.power || '--')}</td>
+          <td>${(d.voltage || '--')}</td>
+          <td>${(d.current || '--')}</td>
+        </tr>
+      `).join('');
+    }
+    
+    // ===== BUTTON HANDLERS =====
+    
+    // Load/Refresh Data
+    document.getElementById('btn-refresh').addEventListener('click', () => {
+      const icon = document.getElementById('refresh-icon');
+      icon.classList.add('spinning');
+      setTimeout(() => {
+        icon.classList.remove('spinning');
+        updateChart();
+        updateTable();
+        AF.ToastNotification.success('Data refreshed');
+      }, 600);
+    });
+    
+    // Clear Data
+    document.getElementById('btn-clear').addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all data?')) {
+        AF.DataStore.clear();
+        updateChart();
+        updateTable();
+        AF.ToastNotification.info('Data cleared');
+      }
+    });
+    
+    // Download CSV
+    document.getElementById('btn-download').addEventListener('click', () => {
+      const data = AF.DataStore.load();
+      AF.downloadCSV(data, `af-meter-${Date.now()}.csv`);
+    });
+    
+    // Download JSON
+    document.getElementById('btn-download-json').addEventListener('click', () => {
+      const data = AF.DataStore.load();
+      AF.downloadJSON(data, `af-meter-${Date.now()}.json`);
+    });
+    
+    // Compare Periods (placeholder)
+    document.getElementById('btn-compare').addEventListener('click', () => {
+      AF.ToastNotification.warning('Compare Periods feature coming soon', 3000);
+    });
+    
+    // Time range filter
     document.getElementById('time-range').addEventListener('change', (e) => {
       document.getElementById('custom-range').style.display = 
         e.target.value === 'custom' ? 'block' : 'none';
+      updateChart();
+    });
+    
+    // Apply custom date range
+    document.getElementById('btn-apply-range').addEventListener('click', () => {
+      const from = new Date(document.getElementById('date-from').value).getTime();
+      const to = new Date(document.getElementById('date-to').value).getTime();
+      
+      if (!from || !to) {
+        AF.ToastNotification.warning('Please select both dates');
+        return;
+      }
+      
+      const data = AF.DataStore.load().filter(d => d.ts >= from && d.ts <= to);
+      document.getElementById('chart-container').style.display = data.length > 0 ? 'block' : 'none';
+      AF.drawLineChart(chart, data);
+      updateStats();
+      AF.ToastNotification.success(`Applied filter: ${data.length} readings`);
+    });
+    
+    // Auto-refresh checkbox
+    document.getElementById('auto-refresh').addEventListener('change', (e) => {
+      if (e.target.checked) {
+        autoRefreshInterval = setInterval(() => {
+          updateChart();
+          updateTable();
+        }, 30000);
+        AF.ToastNotification.info('Auto-refresh enabled (30s)', 2000);
+      } else {
+        clearInterval(autoRefreshInterval);
+        AF.ToastNotification.info('Auto-refresh disabled', 2000);
+      }
+    });
+    
+    // Chart type selector (placeholder for future)
+    document.getElementById('chart-type').addEventListener('change', (e) => {
+      AF.ToastNotification.info(`Chart type: ${e.target.value}`, 2000);
+      // Future: render different chart types (bar, area, etc.)
+    });
+    
+    // ===== INITIALIZE ON PAGE LOAD =====
+    document.addEventListener('DOMContentLoaded', () => {
+      updateChart();
+      updateTable();
+    });
+    
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      if (autoRefreshInterval) clearInterval(autoRefreshInterval);
     });
   </script>
 </body>

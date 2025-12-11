@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AF Meter — Settings</title>
+  <link rel="stylesheet" href="assets/styles.css">
+  <style>
+    .settings-form {
+      max-width: 500px;
+    }
+    .form-group {
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+      color: var(--foreground);
+    }
+    .form-group input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--input);
+      color: var(--foreground);
+      font-size: 1em;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px var(--accent) / 0.2;
+    }
+    .form-hint {
+      font-size: 0.85em;
+      color: var(--muted-foreground);
+      margin-top: 4px;
+    }
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    .button-group button {
+      flex: 1;
+    }
+    .success-message {
+      padding: 12px;
+      border-radius: 6px;
+      background: rgba(100, 255, 218, 0.2);
+      color: #64ffda;
+      margin-bottom: 16px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+  <header class="gradient-card glow-primary">
+    <div style="display:flex;align-items:center;gap:12px">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 8px hsl(174 72% 50% / 0.6))">
+        <path d="M13 2L3 14H11L11 22L21 10H13L13 2Z" fill="hsl(174 72% 50%)" stroke="hsl(174 72% 60%)" stroke-width="1.5" stroke-linejoin="round"/>
+      </svg>
+      <h1>AF Meter</h1>
+    </div>
+    <nav class="links">
+      <a href="index.html"><button class="ghost">Home</button></a>
+      <a href="analytics.html"><button class="ghost">Analytics</button></a>
+      <a href="multi-device.html"><button class="ghost">Devices</button></a>
+    </nav>
+  </header>
+  <main>
+    <section class="page">
+      <h2>Settings</h2>
+      <div class="card animate-pulse-glow">
+        <p class="status">Configure alert thresholds for temperature monitoring.</p>
+        
+        <div id="success-msg" class="success-message">Settings saved successfully!</div>
+        
+        <form class="settings-form" id="settings-form">
+          <div class="form-group">
+            <label for="warning_temp">Warning Temperature (°C)</label>
+            <input type="number" id="warning_temp" name="warning_temp" min="0" max="100" step="0.5" required />
+            <div class="form-hint">Alert will show WARNING status when temperature exceeds this value.</div>
+          </div>
+
+          <div class="form-group">
+            <label for="alert_temp">Alert Temperature (°C)</label>
+            <input type="number" id="alert_temp" name="alert_temp" min="0" max="100" step="0.5" required />
+            <div class="form-hint">Alert will show OVER HEATING and activate buzzer when temperature exceeds this value.</div>
+          </div>
+
+          <div class="button-group">
+            <button type="submit">Save Settings</button>
+            <button type="button" class="ghost" onclick="location.reload()">Reset</button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </main>
+  <footer>Prototype — demo only.</footer>
+  </div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="assets/main.js"></script>
+  <script>
+    const socket = io();
+    const form = document.getElementById('settings-form');
+    const successMsg = document.getElementById('success-msg');
+
+    // Load settings from server
+    async function loadSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        const settings = await res.json();
+        document.getElementById('warning_temp').value = settings.warning_temp || 25.0;
+        document.getElementById('alert_temp').value = settings.alert_temp || 30.0;
+      } catch (err) {
+        console.error('Failed to load settings:', err);
+      }
+    }
+
+    // Save settings
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        warning_temp: parseFloat(document.getElementById('warning_temp').value),
+        alert_temp: parseFloat(document.getElementById('alert_temp').value)
+      };
+
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+        const result = await res.json();
+        if (result.ok) {
+          successMsg.style.display = 'block';
+          setTimeout(() => successMsg.style.display = 'none', 3000);
+        }
+      } catch (err) {
+        console.error('Failed to save settings:', err);
+        alert('Error saving settings');
+      }
+    });
+
+    // Listen for settings updates from server
+    socket.on('settings_update', (settings) => {
+      document.getElementById('warning_temp').value = settings.warning_temp || 25.0;
+      document.getElementById('alert_temp').value = settings.alert_temp || 30.0;
+    });
+
+    // Initial load
+    loadSettings();
+  </script>
+</body>
+</html>
