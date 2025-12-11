@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AF Meter — Analytics</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-container">
+  <header class="gradient-card glow-primary">
+    <h1>AF Meter</h1>
+    <nav class="links">
+      <a href="connect.html"><button>Connect</button></a>
+      <a href="index.html"><button class="ghost">Home</button></a>
+    </nav>
+  </header>
+  <main>
+    <section class="page">
+      <h2>Analytics</h2>
+      <div class="card animate-pulse-glow">
+        <p class="status">Displays energy readings collected from the meter. Use the Connect page to fetch or simulate data.</p>
+        <div style="margin-bottom:8px">
+          <button id="btn-refresh">Load data</button>
+          <button id="btn-clear" class="ghost">Clear stored data</button>
+          <button id="btn-download" class="ghost">Download CSV</button>
+        </div>
+        <canvas id="chart"></canvas>
+        <div style="margin-top:12px" id="summary" class="status"></div>
+      </div>
+    </section>
+  </main>
+  <footer>Prototype — demo only.</footer>
+  </div>
+  <script src="assets/main.js"></script>
+  <script>
+    const chart = document.getElementById('chart')
+    async function render(){
+      const el = document.getElementById('summary')
+      try{
+        const res = await fetch('/api/readings')
+        if(res.ok){
+          const data = await res.json()
+          // mirror into local store for offline use
+          AF.DataStore.clear(); AF.DataStore.store(data)
+          AF.drawLineChart(chart, data)
+          const vals = data.map(d=>d.value)
+          if(vals.length===0){ el.textContent = 'No readings available.'; return }
+          const sum = vals.reduce((a,b)=>a+b,0)
+          el.textContent = `Points: ${vals.length} — min: ${Math.min(...vals)} — avg: ${Math.round(sum/vals.length)} — max: ${Math.max(...vals)}`
+          return
+        }
+      }catch(e){ console.warn('Backend not available, falling back to local data', e) }
+      // fallback to local
+      const data = AF.DataStore.load()
+      AF.drawLineChart(chart, data)
+      const vals = data.map(d=>d.value)
+      if(vals.length===0){ el.textContent = 'No readings available.'; return }
+      const sum = vals.reduce((a,b)=>a+b,0)
+      el.textContent = `Points: ${vals.length} — min: ${Math.min(...vals)} — avg: ${Math.round(sum/vals.length)} — max: ${Math.max(...vals)}`
+    }
+    document.getElementById('btn-refresh').addEventListener('click', render)
+    document.getElementById('btn-clear').addEventListener('click', async ()=>{ if(confirm('Clear stored readings?')){ try{ await fetch('/api/readings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify([])}) }catch(e){} AF.DataStore.clear(); render() } })
+    document.getElementById('btn-download').addEventListener('click', ()=>{ AF.downloadCSV(AF.DataStore.load()) })
+    window.addEventListener('resize', ()=>AF.drawLineChart(chart, AF.DataStore.load()))
+    // initial render
+    render()
+  </script>
+</body>
+</html>

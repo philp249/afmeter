@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AF Meter — Connect</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <div class="app-container">
+  <header class="gradient-card glow-primary">
+    <h1>AF Meter</h1>
+    <nav class="links">
+      <a href="analytics.html"><button>Analytics</button></a>
+      <a href="index.html"><button class="ghost">Home</button></a>
+    </nav>
+  </header>
+  <main>
+    <section class="page">
+      <h2>Connect to Meter</h2>
+      <div class="card animate-pulse-glow">
+        <p class="status">Choose a transport and attempt a connection to your smart meter. Real connections require HTTPS and site permissions.</p>
+        <h3>Bluetooth (Web Bluetooth)</h3>
+        <div>
+          <button id="btn-bt">Connect via Bluetooth</button>
+          <span id="bt-status" class="status">Not connected</span>
+        </div>
+        <hr />
+        <h3>Wi‑Fi / LAN (Simulated)</h3>
+        <div>
+          <label>Device IP or Hostname</label>
+          <input id="wifi-host" placeholder="192.168.1.100" />
+          <label>Device Path (optional)</label>
+          <input id="device-path" placeholder="/status or /api/values" />
+          <div class="flex">
+            <button id="btn-wifi">Connect via Wi‑Fi (simulate)</button>
+            <button id="btn-proxy" class="ghost">Fetch via Proxy</button>
+            <button id="btn-scan" class="ghost">Scan (simulate)</button>
+          </div>
+          <p id="wifi-status" class="status">Not connected</p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>Prototype — demo only.</footer>
+  </div>
+  <script src="assets/main.js"></script>
+  <script>
+    const btStatus = document.getElementById('bt-status')
+    document.getElementById('btn-bt').addEventListener('click', async ()=>{
+      if(!navigator.bluetooth){ btStatus.textContent='Web Bluetooth not supported in this browser'; return }
+      try{
+        btStatus.textContent='Requesting device...'
+        const device = await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:[]})
+        btStatus.textContent = 'Connected: ' + (device.name||device.id)
+        // Try to fetch real data and POST to backend; fallback to local simulation
+        let points = []
+        try{
+          points = AF.simulateFetchData('bluetooth')
+          // Attempt to POST to backend API
+          const r = await fetch('/api/readings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(points)})
+          if(r.ok){ const j = await r.json(); console.log('Posted to backend', j) }
+        }catch(e){ console.warn('Backend unavailable, stored locally', e) }
+        alert('Fetched '+points.length+' readings (bluetooth)')
+      }catch(err){ btStatus.textContent = 'Cancelled or failed: '+err.message }
+    })
+    const wifiStatus = document.getElementById('wifi-status')
+    document.getElementById('btn-scan').addEventListener('click', ()=>{
+      const host = '192.168.1.' + (100 + Math.floor(Math.random()*50))
+      document.getElementById('wifi-host').value = host
+      wifiStatus.textContent = 'Discovered: '+host
+    })
+    document.getElementById('btn-wifi').addEventListener('click', async ()=>{
+      const host = document.getElementById('wifi-host').value.trim()
+      if(!host){ wifiStatus.textContent='Enter a host or scan first'; return }
+      wifiStatus.textContent = 'Connected to '+host
+      const points = AF.simulateFetchData('wifi')
+      try{
+        const r = await fetch('/api/readings', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(points)})
+        if(r.ok){ console.log('Posted simulated wifi readings to backend') }
+      }catch(e){ console.warn('Backend not available; data kept in localStorage') }
+      alert('Fetched '+points.length+' readings (wifi)')
+    })
+
+    document.getElementById('btn-proxy').addEventListener('click', async ()=>{
+      const host = document.getElementById('wifi-host').value.trim()
+      const path = document.getElementById('device-path').value.trim() || '/'
+      if(!host){ wifiStatus.textContent='Enter a host or scan first'; return }
+      wifiStatus.textContent = 'Proxying to '+host+path
+      try{
+        const res = await fetch('/api/proxy', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({host, path})})
+        const j = await res.json()
+        if(res.ok){
+          wifiStatus.textContent = `Proxy ${j.status}: ${typeof j.body === 'string' ? j.body.substring(0,120) : JSON.stringify(j.body).substring(0,120)}`
+        }else{
+          wifiStatus.textContent = `Proxy error: ${j.error || res.status}`
+        }
+      }catch(e){ wifiStatus.textContent = 'Proxy failed: '+e.message }
+    })
+  </script>
+</body>
+</html>

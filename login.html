@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AF Meter — Login</title>
+  <link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+  <header>
+    <h1>AF Meter</h1>
+    <nav class="links">
+      <a href="analytics.html"><button>Analytics</button></a>
+      <a href="connect.html"><button class="ghost">Connect</button></a>
+    </nav>
+  </header>
+  <main>
+    <section class="page">
+      <h2>Sign in</h2>
+      <div class="card">
+        <form id="login-form">
+          <label>Email</label>
+          <input id="email" type="email" placeholder="you@example.com" required />
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••" required />
+          <div class="flex">
+            <button type="submit">Sign in</button>
+            <button type="button" class="ghost" id="guest">Use demo</button>
+          </div>
+        </form>
+        <p class="status">This prototype stores a simple session in localStorage only.</p>
+      </div>
+    </section>
+  </main>
+  <footer>Prototype — demo only.</footer>
+  <script src="assets/main.js"></script>
+  <script>
+    document.getElementById('login-form').addEventListener('submit', function(e){
+      e.preventDefault();
+      const user = {email:document.getElementById('email').value, ts:Date.now()}
+      AF.Session.set(user)
+      window.location.href = 'analytics.html'
+    })
+    document.getElementById('guest').addEventListener('click', ()=>{ AF.Session.set({email:'demo@local',ts:Date.now()}); window.location.href='analytics.html' })
+  </script>
+</body>
+</html>

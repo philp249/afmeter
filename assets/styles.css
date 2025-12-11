@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root{
+	/* Core theme colors (from index.css) */
+	--background: hsl(185, 65%, 10%);
+	--foreground: hsl(210 40% 98%);
+
+	--card: hsl(180, 74%, 12%);
+	--card-foreground: hsl(210 40% 98%);
+
+	--popover: hsl(222 47% 8%);
+	--popover-foreground: hsl(210 40% 98%);
+
+	--primary: hsl(174 72% 50%);
+	--primary-foreground: hsl(177, 71%, 45%);
+
+	/* Keep the existing semantic names used in the project */
+	--accent: #0b5cff;
+	--muted: hsl(222 47% 14%);
+
+	--muted-foreground: hsl(215 20% 55%);
+	--destructive: hsl(0 72% 50%);
+	--destructive-foreground: hsl(210 40% 98%);
+
+	--border: hsl(222 47% 18%);
+	--input: hsl(222 47% 14%);
+	--ring: hsl(174 72% 50%);
+
+	/* Accent helpers */
+	--energy-glow: hsl(174 72% 50%);
+	--energy-pulse: hsl(174 72% 60%);
+	--energy-dim: hsl(174 72% 30%);
+}
+
+body{font-family:'Inter',Segoe UI,Arial,sans-serif;margin:0;color:var(--foreground);background:var(--background);min-height:100vh}
+
+/* Layered themed background: subtle radial glow + diagonal gradient over base background */
+body::before{
+	content:"";
+	position:fixed;
+	inset:0;
+	pointer-events:none;
+	background-image:
+		url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><defs><linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%%" style="stop-color:hsl(174,72%%,50%%);stop-opacity:0.08" /><stop offset="100%%" style="stop-color:hsl(11,85%%,55%%);stop-opacity:0.04" /></linearGradient></defs><path d="M100,20 L120,80 L80,80 L100,160 L60,80 L100,80 Z" fill="url(%23grad1)" opacity="0.6"/><path d="M20,60 L35,110 L10,110 L25,150 L5,120 L20,120 Z" fill="hsl(174,72%%,50%%)" opacity="0.05"/><path d="M170,100 L185,150 L160,150 L175,190 L155,160 L170,160 Z" fill="hsl(174,72%%,50%%)" opacity="0.06"/></svg>'),
+		radial-gradient(600px 400px at 10% 10%, hsl(11 85% 55% / 0.06), transparent 12%),
+		radial-gradient(800px 500px at 90% 80%, hsl(174 72% 50% / 0.06), transparent 14%),
+		linear-gradient(135deg, hsl(222 47% 8% / 0.04), transparent 30%);
+	background-size: 200px 200px, 100% 100%, 100% 100%, 100% 100%;
+	mix-blend-mode:overlay;
+	z-index:0;
+}
+
+/* App container to center content and create a raised surface */
+.app-container{
+	position:relative;
+	z-index:1;
+	max-width:1100px;
+	margin:0 auto;
+	padding:28px 20px 80px;
+}
+header{background:var(--card);border-bottom:1px solid hsl(0 0% 92%);padding:12px 20px;display:flex;align-items:center;justify-content:space-between}
+header h1{font-size:16px;margin:0}
+nav{display:flex;gap:8px}
+button{background:var(--accent);color:#fff;border:0;padding:8px 12px;border-radius:6px;cursor:pointer}
+button.ghost{background:transparent;color:var(--accent);border:1px solid #dfe7ff}
+main{padding:20px}
+.page{display:block}
+form {max-width:420px}
+input,select{width:100%;padding:8px;margin:6px 0 12px;border:1px solid #ddd;border-radius:6px}
+.card{background:var(--card);color:var(--card-foreground);border:1px solid var(--border);padding:16px;border-radius:12px;box-shadow:0 8px 30px hsl(222 47% 4% / 0.5)}
+.status{font-size:13px;color:var(--muted)}
+.flex{display:flex;gap:12px;align-items:center}
+canvas{max-width:100%;height:300px;background:#fff;border-radius:6px}
+footer{padding:12px 20px;font-size:13px;color:var(--muted);border-top:1px solid #f0f0f0}
+.links{display:flex;gap:8px}
+
+/* Utilities and animations from index.css */
+.glow-primary {
+	box-shadow: 0 0 20px hsl(var(--primary) / 0.4), 0 0 40px hsl(var(--primary) / 0.2);
+}
+
+.glow-text {
+	text-shadow: 0 0 20px hsl(var(--primary) / 0.5);
+}
+
+.gradient-primary {
+	background: linear-gradient(135deg, hsl(174 72% 50%) 0%, hsl(174 72% 35%) 100%);
+}
+
+.gradient-card {
+	background: linear-gradient(180deg, hsl(222 47% 10%) 0%, hsl(222 47% 8%) 100%);
+}
+
+.animate-pulse-glow {
+	animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-float {
+	animation: float 3s ease-in-out infinite;
+}
+
+.animate-shimmer {
+	animation: shimmer 2s linear infinite;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		hsl(var(--primary) / 0.1),
+		transparent
+	);
+	background-size: 200% 100%;
+}
+
+@keyframes pulseGlow {
+	0%, 100% {
+		box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+	}
+	50% {
+		box-shadow: 0 0 40px hsl(var(--primary) / 0.5), 0 0 60px hsl(var(--primary) / 0.3);
+	}
+}
+
+@keyframes float {
+	0%, 100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-10px);
+	}
+}
+
+@keyframes shimmer {
+	0% {
+		background-position: -200% 0;
+	}
+	100% {
+		background-position: 200% 0;
+	}
+}
+
+/* Custom scrollbar (webkit browsers) */
+::-webkit-scrollbar {
+	width: 8px;
+	height: 8px;
+}
+
+::-webkit-scrollbar-track {
+	background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--muted);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--muted-foreground);
+}

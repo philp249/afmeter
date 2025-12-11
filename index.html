@@ -1,0 +1,120 @@
+Push-Location 'C:\Users\1unipod\afmeter'
+python -m http.server 8000
+ii http://localhost:8000/index.html
+Pop-Location<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<title>AF Meter — Home</title>
+	<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+	<script src="assets/main.js"></script>
+	<div class="app-container">
+	<header class="gradient-card glow-primary">
+		<div style="display:flex;align-items:center;gap:12px">
+			<svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 0 8px hsl(174 72% 50% / 0.6))">
+				<path d="M13 2L3 14H11L11 22L21 10H13L13 2Z" fill="hsl(174 72% 50%)" stroke="hsl(174 72% 60%)" stroke-width="1.5" stroke-linejoin="round"/>
+			</svg>
+			<h1>AF Meter</h1>
+		</div>
+		<nav class="links">
+			<div id="header-links"></div>
+		</nav>
+	</header>
+	<main>
+		<section class="page">
+			<div class="card animate-pulse-glow">
+				<h2>AF Meter Prototype</h2>
+				<p class="status">This repo now serves separate pages for Connect (`connect.html`) and Analytics (`analytics.html`).</p>
+				<p class="status">Notes: Web Bluetooth requires HTTPS or localhost. Wi‑Fi actions are simulated in this prototype.</p>
+				<hr />
+				<div id="landing-auth" style="margin-top:12px"></div>
+			</div>
+		</section>
+	</main>
+	<footer>Prototype — demo only.</footer>
+	</div>
+	<script src="assets/main.js"></script>
+	<script>
+		// Render landing auth area: if user signed-in show account + logout,
+		// otherwise show inline login form that uses AF.Session helpers.
+		const mount = document.getElementById('landing-auth')
+		function renderHeaderLinks(){
+			const container = document.getElementById('header-links')
+			if(!container) return
+			const user = AF && AF.Session ? AF.Session.get() : null
+			container.innerHTML = ''
+			if(user){
+				const a1 = document.createElement('a')
+				a1.href = 'connect.html'
+				a1.innerHTML = '<button>Connect</button>'
+				const a2 = document.createElement('a')
+				a2.href = 'analytics.html'
+				a2.innerHTML = '<button class="ghost">Analytics</button>'
+				container.appendChild(a1)
+				container.appendChild(a2)
+			}else{
+				// when not signed in, keep header minimal (no links)
+				container.innerHTML = ''
+			}
+		}
+		function renderAuth(){
+			const user = AF && AF.Session ? AF.Session.get() : null
+			mount.innerHTML = ''
+			if(user){
+				const box = document.createElement('div')
+				box.className = 'card'
+				box.innerHTML = `<p class="status">Signed in as <strong>${String(user.email)}</strong></p>`
+				const btns = document.createElement('div')
+				btns.className = 'flex'
+				const goto = document.createElement('button')
+				goto.textContent = 'Open Analytics'
+				goto.addEventListener('click', ()=> window.location.href = 'analytics.html')
+				const logout = document.createElement('button')
+				logout.className = 'ghost'
+				logout.textContent = 'Sign out'
+				logout.addEventListener('click', ()=>{
+					AF.Session.clear()
+					renderAuth()
+				})
+				btns.appendChild(goto); btns.appendChild(logout)
+				box.appendChild(btns)
+				mount.appendChild(box)
+			}else{
+				const box = document.createElement('div')
+				box.className = 'card'
+				box.innerHTML = `
+					<form id="landing-login">
+						<label>Email</label>
+						<input id="landing-email" type="email" placeholder="you@example.com" required />
+						<label>Password</label>
+						<input id="landing-password" type="password" placeholder="••••••" required />
+						<div class="flex">
+							<button type="submit">Sign in</button>
+							<button type="button" class="ghost" id="landing-guest">Use demo</button>
+						</div>
+					</form>
+				`
+				mount.appendChild(box)
+				const form = document.getElementById('landing-login')
+				form.addEventListener('submit', (e)=>{
+					e.preventDefault()
+					const email = document.getElementById('landing-email').value
+					AF.Session.set({email, ts: Date.now()})
+					renderAuth()
+					window.location.href = 'analytics.html'
+				})
+				document.getElementById('landing-guest').addEventListener('click', ()=>{
+					AF.Session.set({email:'demo@local', ts: Date.now()})
+					renderAuth()
+					window.location.href = 'analytics.html'
+				})
+			}
+		}
+		// Wait for AF to be available (assets/main.js loaded)
+		if(window.AF && AF.Session) { renderAuth(); renderHeaderLinks() } else window.addEventListener('load', ()=> setTimeout(()=>{ renderAuth(); renderHeaderLinks() },50))
+	</script>
+</body>
+</html>
